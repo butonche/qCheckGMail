@@ -378,3 +378,13 @@ int settings::checkForUpdatesInterval()
 {
 	return 60 * 1000 * this->getSetting( "checkForUpdatesIntervalInMinutes",30 ).toInt() ;
 }
+
+QStringList settings::accountOrder()
+{
+	return this->getSetting( "accountOrder",QStringList() ).toStringList() ;
+}
+
+void settings::setAccountOrder( const QStringList& order )
+{
+	this->setSetting( "accountOrder",order ) ;
+}

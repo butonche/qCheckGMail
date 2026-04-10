@@ -130,14 +130,9 @@ void qCheckGMail::showToolTip( const QString& iconName,
 {
 	if( subTitle.size() > 0 ){
 
-		std::vector< qCheckGMail::accountsStatus > sorted( subTitle ) ;
-		std::sort( sorted.begin(),sorted.end(),[]( const auto& a,const auto& b ){
-			return a.accName < b.accName ;
-		} ) ;
-
 		int maxNameLen = 0 ;
 		int maxCountLen = 0 ;
-		for( const auto& e : sorted ){
+		for( const auto& e : subTitle ){
 			int sp = e.txt.lastIndexOf( ' ' ) ;
 			int nameLen = ( sp >= 0 ) ? sp : e.txt.size() ;
 			int countLen = ( sp >= 0 ) ? ( e.txt.size() - sp - 1 ) : 0 ;
@@ -160,7 +155,7 @@ void qCheckGMail::showToolTip( const QString& iconName,
 		int totalLineWidth = std::max( naturalLineWidth,titleInMonoChars ) ;
 
 		QString m = "<pre>\n" ;
-		for( const auto& e : sorted ){
+		for( const auto& e : subTitle ){
 			int sp = e.txt.lastIndexOf( ' ' ) ;
 			QString name = ( sp >= 0 ) ? e.txt.left( sp ) : e.txt ;
 			QString count = ( sp >= 0 ) ? e.txt.mid( sp + 1 ) : QString() ;
@@ -1460,12 +1455,24 @@ void qCheckGMail::getAccountsInfo( QVector< accounts >&& acc )
 		}
 	}
 
-	auto ff = []( const accounts& lhs,const accounts& rhs ){
+	auto savedOrder = m_settings.accountOrder() ;
 
-		return lhs.accountName().length() < rhs.accountName().length() ;
-	} ;
+	if( !savedOrder.isEmpty() ){
 
-	std::sort( m_accounts.begin(),m_accounts.end(),std::move( ff ) ) ;
+		std::sort( m_accounts.begin(),m_accounts.end(),
+			[&savedOrder]( const accounts& a,const accounts& b ){
+				auto idxA = savedOrder.indexOf( a.accountName() ) ;
+				auto idxB = savedOrder.indexOf( b.accountName() ) ;
+				if( idxA < 0 ) idxA = savedOrder.size() ;
+				if( idxB < 0 ) idxB = savedOrder.size() ;
+				return idxA < idxB ;
+			} ) ;
+	}else{
+		std::sort( m_accounts.begin(),m_accounts.end(),
+			[]( const accounts& lhs,const accounts& rhs ){
+				return lhs.accountName().length() < rhs.accountName().length() ;
+			} ) ;
+	}
 
 	m_numberOfAccounts = m_accounts.size() ;
 

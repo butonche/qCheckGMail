@@ -22,6 +22,7 @@
 #include "ui_walletmanager.h"
 
 #include <utility>
+#include <algorithm>
 
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -143,6 +144,16 @@ void walletmanager::buildGUI()
 		 this,
 		 &walletmanager::pushButtonClose ) ;
 
+	connect( m_ui->pushButtonMoveUp,
+		 &QPushButton::clicked,
+		 this,
+		 &walletmanager::moveAccountUp ) ;
+
+	connect( m_ui->pushButtonMoveDown,
+		 &QPushButton::clicked,
+		 this,
+		 &walletmanager::moveAccountDown ) ;
+
 	connect( m_ui->tableWidget,
 		 &QTableWidget::itemClicked,
 		 this,
@@ -254,6 +265,22 @@ void walletmanager::openWallet()
 
 				this->readAccountInfo() ;
 
+				{
+					auto savedOrder = m_settings.accountOrder() ;
+
+					if( !savedOrder.isEmpty() ){
+
+						std::sort( m_accounts.begin(),m_accounts.end(),
+							[&savedOrder]( const accounts& a,const accounts& b ){
+								auto idxA = savedOrder.indexOf( a.accountName() ) ;
+								auto idxB = savedOrder.indexOf( b.accountName() ) ;
+								if( idxA < 0 ) idxA = savedOrder.size() ;
+								if( idxB < 0 ) idxB = savedOrder.size() ;
+								return idxA < idxB ;
+							} ) ;
+					}
+				}
+
 				for( const auto& it : m_accounts ){
 
 					this->addEntry( it ) ;
@@ -314,6 +341,8 @@ void walletmanager::enableAll()
 	m_ui->groupBox->setEnabled( true ) ;
 	m_ui->pushButtonAccountAdd->setEnabled( true ) ;
 	m_ui->pushButtonClose->setEnabled( true ) ;
+	m_ui->pushButtonMoveUp->setEnabled( true ) ;
+	m_ui->pushButtonMoveDown->setEnabled( true ) ;
 	m_ui->tableWidget->setEnabled( true ) ;
 	m_table->setFocus() ;
 }
@@ -323,6 +352,8 @@ void walletmanager::disableAll()
 	m_ui->groupBox->setEnabled( false ) ;
 	m_ui->pushButtonAccountAdd->setEnabled( false ) ;
 	m_ui->pushButtonClose->setEnabled( false ) ;
+	m_ui->pushButtonMoveUp->setEnabled( false ) ;
+	m_ui->pushButtonMoveDown->setEnabled( false ) ;
 	m_ui->tableWidget->setEnabled( false ) ;
 }
 
@@ -350,6 +381,7 @@ void walletmanager::pushButtonAdd( accounts::entry&& e )
 
 		m_accounts.append( this->addEntry( m_accEntry ) ) ;
 
+		this->saveAccountOrder() ;
 		this->selectLastRow() ;
 		this->enableAll() ;
 	} ) ;
@@ -375,6 +407,7 @@ void walletmanager::editAccount( const QString& accName,const QString& labels,ad
 			m_table->item( row,0 )->setText( accName ) ;
 			m_table->item( row,1 )->setText( labels ) ;
 
+			this->saveAccountOrder() ;
 			this->enableAll() ;
 		} ) ;
 	}else{
@@ -573,6 +606,7 @@ void walletmanager::deleteAccount( bool )
 
 				m_accounts.remove( m_row ) ;
 				m_table->removeRow( m_row ) ;
+				this->saveAccountOrder() ;
 				this->enableAll() ;
 			} ) ;
 
@@ -627,4 +661,68 @@ void walletmanager::tableItemChanged( QTableWidgetItem * current,QTableWidgetIte
 
 walletmanager::wallet::~wallet()
 {
+}
+
+void walletmanager::moveAccountUp()
+{
+	auto row = m_table->currentRow() ;
+
+	if( row <= 0 ){
+
+		return ;
+	}
+
+	m_accounts.swapItemsAt( row,row - 1 ) ;
+
+	for( int col = 0 ; col < m_table->columnCount() ; col++ ){
+
+		auto above = m_table->item( row - 1,col )->text() ;
+		auto current = m_table->item( row,col )->text() ;
+
+		m_table->item( row - 1,col )->setText( current ) ;
+		m_table->item( row,col )->setText( above ) ;
+	}
+
+	this->selectRow( row,false ) ;
+	this->selectRow( row - 1 ) ;
+
+	this->saveAccountOrder() ;
+}
+
+void walletmanager::moveAccountDown()
+{
+	auto row = m_table->currentRow() ;
+
+	if( row < 0 || row >= m_table->rowCount() - 1 ){
+
+		return ;
+	}
+
+	m_accounts.swapItemsAt( row,row + 1 ) ;
+
+	for( int col = 0 ; col < m_table->columnCount() ; col++ ){
+
+		auto below = m_table->item( row + 1,col )->text() ;
+		auto current = m_table->item( row,col )->text() ;
+
+		m_table->item( row + 1,col )->setText( current ) ;
+		m_table->item( row,col )->setText( below ) ;
+	}
+
+	this->selectRow( row,false ) ;
+	this->selectRow( row + 1 ) ;
+
+	this->saveAccountOrder() ;
+}
+
+void walletmanager::saveAccountOrder()
+{
+	QStringList order ;
+
+	for( const auto& it : m_accounts ){
+
+		order.append( it.accountName() ) ;
+	}
+
+	m_settings.setAccountOrder( order ) ;
 }

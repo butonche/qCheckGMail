@@ -75,6 +75,8 @@ public:
 	void setIconAlwaysVisible( bool ) ;
 	void saveStorageSystem( const QString& ) ;
 	void saveReportOnAllAccounts( bool b ) ;
+	QStringList accountOrder() ;
+	void setAccountOrder( const QStringList& ) ;
 private:	
 	template< typename Type >
 	QVariant getSetting( const char * key,const Type& defautValue )

@@ -127,6 +127,9 @@ public:
 private:
 	void deleteAccount( bool = false ) ;
 	void editEntryLabels() ;
+	void moveAccountUp() ;
+	void moveAccountDown() ;
+	void saveAccountOrder() ;
 	void pushButtonToAdd() ;
 	void pushButtonClose() ;
 	void tableItemClicked( QTableWidgetItem * ) ;
