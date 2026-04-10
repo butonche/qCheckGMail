@@ -35,24 +35,6 @@ namespace utils
 	{
 		namespace details
 		{
-			#if QT_VERSION < QT_VERSION_CHECK( 5,4,0 )
-			class exec : public QObject
-			{
-				Q_OBJECT
-			public:
-				exec( std::function< void() > function ) : m_function( std::move( function ) )
-				{
-					QTimer::singleShot( 0,this,SLOT( run() ) ) ;
-				}
-			private slots:
-				void run()
-				{
-					m_function() ;
-				}
-			private:
-				std::function< void() > m_function ;
-			} ;
-#else
 			class exec
 			{
 			public:
@@ -66,7 +48,6 @@ namespace utils
 				}
 			private:
 			} ;
-#endif
 		}
 		template< typename Type,typename TypeArgs >
 		struct appInfo
@@ -171,23 +152,12 @@ namespace utils
 						m_info.app.quit() ;
 					} ) ;
 
-				#if QT_VERSION < QT_VERSION_CHECK( 5,15,0 )
-					using cs = void( QLocalSocket::* )( QLocalSocket::LocalSocketError ) ;
-
-					QObject::connect( &m_localSocket,static_cast< cs >( &QLocalSocket::error ),[ this ]( QLocalSocket::LocalSocketError ){
-
-						m_iargs.otherInstanceCrashed() ;
-						QFile::remove( m_info.socketPath ) ;
-						this->start() ;
-					} ) ;
-				#else
 					QObject::connect( &m_localSocket,&QLocalSocket::errorOccurred,[ this ]( QLocalSocket::LocalSocketError ){
 
 						m_iargs.otherInstanceCrashed() ;
 						QFile::remove( m_info.socketPath ) ;
 						this->start() ;
 					} ) ;
-				#endif
 					m_localSocket.connectToServer( m_info.socketPath ) ;
 				}else{
 					this->start() ;

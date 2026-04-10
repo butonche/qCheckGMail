@@ -124,7 +124,7 @@ gmailauthorization::gmailauthorization( QDialog * parent,
 
 		auto p = static_cast< unsigned short >( portNumber ) ;
 
-		auto s = m_server.listen( QHostAddress( "http://127.0.0.1" ),p ) ;
+		auto s = m_server.listen( QHostAddress( "127.0.0.1" ),p ) ;
 
 		if( s ){
 

@@ -38,9 +38,9 @@
 #include "configurationoptionsdialog.h"
 #include "settings.h"
 
-#if KF5
-#include <kstatusnotifieritem.h>
-#include <knotification.h>
+#if KF6
+#include <KStatusNotifierItem>
+#include <KNotification>
 
 class statusicon : public KStatusNotifierItem
 {
@@ -135,7 +135,7 @@ private slots:
 	void activateRequested( bool,const QPoint& ) ;
 	void trayIconClicked( QSystemTrayIcon::ActivationReason reason ) ;
 private:
-#if KF5
+#if KF6
 	QMenu * m_menu ;
 #else
 	QMenu m_menu ;

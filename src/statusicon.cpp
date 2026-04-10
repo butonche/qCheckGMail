@@ -24,7 +24,7 @@
 
 static QIcon _getIcon( settings&,const QString& name )
 {
-	return QIcon::fromTheme( name,QIcon( ":/" + name ) ) ;
+	return QIcon( ":/" + name + ".svg" ) ;
 }
 
 static QPixmap _icon( const QIcon& icon,int count,settings& s )
@@ -39,34 +39,18 @@ static QPixmap _icon( const QIcon& icon,int count,settings& s )
 	paint.setRenderHint( QPainter::SmoothPixmapTransform ) ;
 	paint.setRenderHint( QPainter::Antialiasing ) ;
 
-#if QT_VERSION < QT_VERSION_CHECK( 5,15,0 )
-
-	int width = static_cast< int >( pixmap.width() * 0.8 ) ;
-
-	if( fm.width( number ) > width ){
-
-		while( fm.width( number ) > width && size > 0 ){
-
-			size = size - 1 ;
-			font.setPointSize( size ) ;
-		}
-	}
-
-#else
-	font.setPointSize( size ) ;
 	size = s.fontSize() ;
-#endif
 	font.setPixelSize( size ) ;
 	font.setBold( true ) ;
 	paint.setFont( font ) ;
 	paint.setPen( QColor( s.fontColor() ) ) ;
-	paint.drawText( pixmap.rect(),Qt::AlignVCenter | Qt::AlignHCenter,number ) ;
+	paint.drawText( QRectF( QPointF( 0,0 ),pixmap.deviceIndependentSize() ),Qt::AlignVCenter | Qt::AlignHCenter,number ) ;
 	paint.end() ;
 
 	return pixmap ;
 }
 
-#if KF5
+#if KF6
 
 statusicon::statusicon( settings& s,statusicon::clickActions ac ) :
 	m_menu( new QMenu() ),
@@ -165,9 +149,9 @@ statusicon::ItemStatus statusicon::getStatus()
 void statusicon::newEmailNotify()
 {
 	KNotification::event( "qCheckGMail-NewMail",
+			      "qCheckGMail",
 			      "",
 			      QPixmap(),
-			      nullptr,
 			      KNotification::CloseOnTimeout,
 			      "qCheckGMail" ) ;
 }
@@ -286,11 +270,6 @@ void statusicon::setToolTip( const QString& iconName,const QString& title,const 
 {
 	Q_UNUSED( iconName )
 	Q_UNUSED( title )
-#if QT_VERSION < QT_VERSION_CHECK( 5,15,0 )
-
-	auto r = QString( "<table><tr><td><b>%1<br></b></td></tr><tr><td>%2</td></tr></table>" ).arg( title,subTitle ) ;
-	m_trayIcon.setToolTip( r ) ;
-#else
 	auto r = QString( "%1\n%2" ).arg( title,subTitle ) ;
 	r.replace( "<table>","" ) ;
 	r.replace( "<b>","" ) ;
@@ -298,7 +277,6 @@ void statusicon::setToolTip( const QString& iconName,const QString& title,const 
 	r.replace( "</table>","" ) ;
 	r.replace( "</b>","" ) ;
 	m_trayIcon.setToolTip( r ) ;
-#endif
 }
 
 void statusicon::addQuitAction()
