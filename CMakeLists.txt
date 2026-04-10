@@ -36,7 +36,7 @@ file(WRITE ${PROJECT_BINARY_DIR}/version.h
 #define LICENCE \"${LICENSE}\"
 ")
 
-set( QT5 "true" )
+set( QT6 "true" )
 
 if( INTERNAL_LXQT_WALLET )
 

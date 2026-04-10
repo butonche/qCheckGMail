@@ -1,4 +1,4 @@
-
+a
 cmake_minimum_required( VERSION 3.16 )
 
 if( WIN32 )
@@ -34,7 +34,7 @@ file( WRITE ${PROJECT_BINARY_DIR}/translations_path.h
 #define TRANSLATIONS_PATH \"${CMAKE_INSTALL_PREFIX}/share/lxqt/translations/lxqt-wallet/\"
 ")
 
-if(QT5)
+if(QT6)
 	find_package(Qt6 REQUIRED COMPONENTS Widgets Core DBus)
 
 	set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -208,7 +208,7 @@ else()
 	set( LIBRARY_TYPE "STATIC")
 endif()
 
-if(QT5)
+if(QT6)
 
 qt_wrap_ui(UI ${UI_FILES})
 
