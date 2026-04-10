@@ -127,34 +127,33 @@ void qCheckGMail::showToolTip( const QString& iconName,
 {
 	if( subTitle.size() > 0 ){
 
-		QString m = "<table>" ;
+		std::vector< qCheckGMail::accountsStatus > sorted( subTitle ) ;
+		std::sort( sorted.begin(),sorted.end(),[]( const auto& a,const auto& b ){
+			return a.accName < b.accName ;
+		} ) ;
 
-		auto iter = subTitle.begin() ;
-
-		const auto& e = *iter ;
-
-		if( e.success ){
-
-			m += "<b>" + e.txt + "</b>" ;
-		}else{
-			m += e.txt ;
+		int maxNameLen = 0 ;
+		int maxCountLen = 0 ;
+		for( const auto& e : sorted ){
+			int sp = e.txt.lastIndexOf( ' ' ) ;
+			int nameLen = ( sp >= 0 ) ? sp : e.txt.size() ;
+			int countLen = ( sp >= 0 ) ? ( e.txt.size() - sp - 1 ) : 0 ;
+			if( nameLen > maxNameLen ) maxNameLen = nameLen ;
+			if( countLen > maxCountLen ) maxCountLen = countLen ;
 		}
 
-		iter++ ;
-
-		for( ; iter != subTitle.end() ; iter++ ){
-
-			const auto& e = *iter ;
-
-			if( e.success ){
-
-				m += "<br><b>" + e.txt + "</b>" ;
-			}else{
-				m += "<br>" + e.txt ;
-			}
+		QString m = "<pre>\n" ;
+		for( const auto& e : sorted ){
+			int sp = e.txt.lastIndexOf( ' ' ) ;
+			QString name = ( sp >= 0 ) ? e.txt.left( sp ) : e.txt ;
+			QString count = ( sp >= 0 ) ? e.txt.mid( sp + 1 ) : QString() ;
+			int namePad = maxNameLen + 2 - name.size() ;
+			int countPad = maxCountLen - count.size() ;
+			m += name.toHtmlEscaped()
+			   + QString( namePad + countPad,' ' )
+			   + count + "\n" ;
 		}
-
-		m += "</table>" ;
+		m += "</pre>" ;
 
 		m_statusicon.setToolTip( iconName,title,m ) ;
 	}
