@@ -32,6 +32,9 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QTimer>
+#include <QApplication>
+#include <QFontMetrics>
+#include <QFontDatabase>
 
 static auto a = "org.freedesktop.Notifications" ;
 static auto b = "/org/freedesktop/Notifications" ;
@@ -142,16 +145,35 @@ void qCheckGMail::showToolTip( const QString& iconName,
 			if( countLen > maxCountLen ) maxCountLen = countLen ;
 		}
 
+		QFontMetrics fmDefault( QApplication::font() ) ;
+		int titlePixelWidth = fmDefault.horizontalAdvance( title ) ;
+
+		QFont monoFont = QFontDatabase::systemFont( QFontDatabase::FixedFont ) ;
+		QFontMetrics fmMono( monoFont ) ;
+		int monoCharWidth = fmMono.horizontalAdvance( QChar( 'X' ) ) ;
+
+		int titleInMonoChars = ( monoCharWidth > 0 )
+			? ( titlePixelWidth + monoCharWidth - 1 ) / monoCharWidth
+			: static_cast< int >( title.size() ) ;
+
+		int naturalLineWidth = maxNameLen + 2 + maxCountLen ;
+		int totalLineWidth = std::max( naturalLineWidth,titleInMonoChars ) ;
+
 		QString m = "<pre>\n" ;
 		for( const auto& e : sorted ){
 			int sp = e.txt.lastIndexOf( ' ' ) ;
 			QString name = ( sp >= 0 ) ? e.txt.left( sp ) : e.txt ;
 			QString count = ( sp >= 0 ) ? e.txt.mid( sp + 1 ) : QString() ;
-			int namePad = maxNameLen + 2 - name.size() ;
-			int countPad = maxCountLen - count.size() ;
-			m += name.toHtmlEscaped()
-			   + QString( namePad + countPad,' ' )
-			   + count + "\n" ;
+			int padding = totalLineWidth - name.size() - count.size() ;
+			QString line = name.toHtmlEscaped()
+				     + QString( padding,' ' )
+				     + count ;
+
+			if( e.success ){
+				m += "<b>" + line + "</b>\n" ;
+			}else{
+				m += line + "\n" ;
+			}
 		}
 		m += "</pre>" ;
 
