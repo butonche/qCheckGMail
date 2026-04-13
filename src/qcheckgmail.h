@@ -84,6 +84,7 @@ public:
 private slots:
 	void notificationClosed( quint32,quint32 ) ;
 	void actionInvoked( quint32,QString ) ;
+	void systemResumed( bool ) ;
 private:
 	void start() ;
 	void configurationWindowClosed( int ) ;

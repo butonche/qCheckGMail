@@ -59,6 +59,14 @@ qCheckGMail::qCheckGMail( const qCheckGMail::args& args ) :
 	m_dbusConnection.connect( a,b,c,"ActionInvoked",
 				  this,SLOT( actionInvoked( quint32,QString ) ) ) ;
 
+	QDBusConnection::systemBus().connect(
+		"org.freedesktop.login1",
+		"/org/freedesktop/login1",
+		"org.freedesktop.login1.Manager",
+		"PrepareForSleep",
+		this,
+		SLOT(systemResumed(bool)) ) ;
+
 	auto m = m_dbusInterface.call( "GetCapabilities" ).arguments() ;
 
 	if( m.size() > 0 ){
@@ -785,6 +793,23 @@ void qCheckGMail::notificationClosed( quint32 id,quint32 reason )
 	if( id == m_dbusId ){
 
 		m_dbusId = 0 ;
+	}
+}
+
+void qCheckGMail::systemResumed( bool aboutToSleep )
+{
+	if( !aboutToSleep ){
+
+		for( auto& acc : m_accounts ){
+
+			acc.setAccessToken( QString() ) ;
+		}
+
+		m_manager.QtNAM().clearConnectionCache() ;
+
+		m_timer.stop() ;
+		m_timer.start( m_interval ) ;
+		this->checkMail() ;
 	}
 }
 
