@@ -140,7 +140,9 @@ void qCheckGMail::showToolTip( const QString& iconName,
 			if( countLen > maxCountLen ) maxCountLen = countLen ;
 		}
 
-		QFontMetrics fmDefault( QApplication::font() ) ;
+		QFont titleFont = QApplication::font() ;
+        titleFont.setBold( true ) ;
+        QFontMetrics fmDefault( titleFont ) ;
 		int titlePixelWidth = fmDefault.horizontalAdvance( title ) ;
 
 		QFont monoFont = QFontDatabase::systemFont( QFontDatabase::FixedFont ) ;
