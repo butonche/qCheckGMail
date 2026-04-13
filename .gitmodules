@@ -1,0 +1,3 @@
+[submodule "src/3rdParty/lxqt_wallet"]
+        path = src/3rdParty/lxqt_wallet
+        url = https://github.com/mhogomchungu/lxqt_wallet.git

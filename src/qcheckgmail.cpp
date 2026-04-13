@@ -1578,15 +1578,6 @@ void qCheckGMail::setLocalLanguage()
 
 			return e ;
 		}() ) ;
-
-		QCoreApplication::installTranslator( [ & ](){
-
-		       auto e = new QTranslator( this ) ;
-
-		       e->load( r.constData(),langPath + "/lxqt_wallet/translations.qm/" ) ;
-
-		       return e ;
-		}() ) ;
 	}
 }
 
