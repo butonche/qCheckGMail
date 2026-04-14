@@ -87,6 +87,7 @@ private slots:
 	void systemResumed( bool ) ;
 private:
 	void start() ;
+	void waitForNetwork( int delay ) ;
 	void configurationWindowClosed( int ) ;
 	void pauseCheckingMail( bool ) ;
 	void configureAccounts() ;

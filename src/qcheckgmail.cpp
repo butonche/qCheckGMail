@@ -35,6 +35,7 @@
 #include <QApplication>
 #include <QFontMetrics>
 #include <QFontDatabase>
+#include <QNetworkInformation>
 
 static auto a = "org.freedesktop.Notifications" ;
 static auto b = "/org/freedesktop/Notifications" ;
@@ -66,6 +67,8 @@ qCheckGMail::qCheckGMail( const qCheckGMail::args& args ) :
 		"PrepareForSleep",
 		this,
 		SLOT(systemResumed(bool)) ) ;
+
+	QNetworkInformation::loadDefaultBackend() ;
 
 	auto m = m_dbusInterface.call( "GetCapabilities" ).arguments() ;
 
@@ -796,6 +799,23 @@ void qCheckGMail::notificationClosed( quint32 id,quint32 reason )
 	}
 }
 
+void qCheckGMail::waitForNetwork( int delay )
+{
+	auto ni = QNetworkInformation::instance() ;
+
+	if( !ni || ni->reachability() == QNetworkInformation::Reachability::Online ){
+
+		this->checkMail() ;
+	}else{
+		int nextDelay = std::min( delay * 2,60000 ) ;
+
+		QTimer::singleShot( delay,this,[this,nextDelay](){
+
+			this->waitForNetwork( nextDelay ) ;
+		} ) ;
+	}
+}
+
 void qCheckGMail::systemResumed( bool aboutToSleep )
 {
 	if( !aboutToSleep ){
@@ -925,6 +945,14 @@ void qCheckGMail::alwaysShowTrayIcon( bool e )
  */
 void qCheckGMail::checkMail()
 {
+	auto ni = QNetworkInformation::instance() ;
+
+	if( ni && ni->reachability() != QNetworkInformation::Reachability::Online ){
+
+		this->waitForNetwork( 1000 ) ;
+		return ;
+	}
+
 	if( m_numberOfAccounts > 0 ){
 
 		m_accountsStatus.clear() ;
