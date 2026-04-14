@@ -826,6 +826,7 @@ void qCheckGMail::systemResumed( bool aboutToSleep )
 		}
 
 		m_manager.QtNAM().clearConnectionCache() ;
+		m_waitingForNetwork = false ;
 
 		m_timer.stop() ;
 		m_timer.start( m_interval ) ;
