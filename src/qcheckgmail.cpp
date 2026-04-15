@@ -1104,9 +1104,22 @@ void qCheckGMail::getAccessToken( int counter,
 				m_logWindow.update( logWindow::TYPE::ERROR,err.unTranslated,true ) ;
 				this->updateUi( counter,{},err.translated ) ;
 			}else{
-				auto err = this->errorMessage( reply ) ;
-				m_logWindow.update( logWindow::TYPE::ERROR,err.unTranslated,true ) ;
-				this->updateUi( counter,{},err.translated ) ;
+				auto error = reply.error() ;
+
+				if( error == QNetworkReply::HostNotFoundError ||
+				    error == QNetworkReply::TemporaryNetworkFailureError ||
+				    error == QNetworkReply::NetworkSessionFailedError ){
+
+					auto err = this->errorMessage( reply ) ;
+					m_logWindow.update( logWindow::TYPE::ERROR,err.unTranslated,true ) ;
+
+					m_manager.QtNAM().clearConnectionCache() ;
+					this->waitForNetwork( 1000 ) ;
+				}else{
+					auto err = this->errorMessage( reply ) ;
+					m_logWindow.update( logWindow::TYPE::ERROR,err.unTranslated,true ) ;
+					this->updateUi( counter,{},err.translated ) ;
+				}
 			}
 		}
 	} ) ;
@@ -1296,30 +1309,20 @@ void qCheckGMail::networkAccess( const QNetworkRequest& request,networkAccessCon
 							     err.code,
 							     std::move( err.errorMsg ) } ) ;
 			}else{
-				if( error == QNetworkReply::TemporaryNetworkFailureError ||
+				if( error == QNetworkReply::HostNotFoundError ||
+				    error == QNetworkReply::TemporaryNetworkFailureError ||
 				    error == QNetworkReply::NetworkSessionFailedError ){
 
-					if( !ctx.retrying ){
+					auto err = this->errorMessage( reply ) ;
 
-						auto err = this->errorMessage( reply ) ;
+					m_logWindow.update( logWindow::TYPE::ERROR,
+							    err.unTranslated,
+							    true ) ;
 
-						m_logWindow.update( logWindow::TYPE::ERROR,
-								    err.unTranslated,
-								    true ) ;
+					m_manager.QtNAM().clearConnectionCache() ;
+					this->waitForNetwork( 1000 ) ;
 
-						auto m = QString::number( m_retryWaitTime / 1000 ) ;
-
-						auto e = QString( "Waiting %1 Seconds Before Retrying" ).arg( m ) ;
-
-						m_logWindow.update( logWindow::TYPE::INFO,e,true ) ;
-
-						utils::qtimer::run( m_retryWaitTime,[ this,ctx = ctx ](){
-
-							this->checkMail( ctx.counter,ctx.acc,ctx.label,true ) ;
-						} ) ;
-
-						return ;
-					}
+					return ;
 				}
 
 				auto err = this->errorMessage( reply ) ;
