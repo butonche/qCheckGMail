@@ -35,7 +35,6 @@
 #include <QApplication>
 #include <QFontMetrics>
 #include <QFontDatabase>
-#include <QNetworkInformation>
 
 static auto a = "org.freedesktop.Notifications" ;
 static auto b = "/org/freedesktop/Notifications" ;
@@ -67,8 +66,6 @@ qCheckGMail::qCheckGMail( const qCheckGMail::args& args ) :
 		"PrepareForSleep",
 		this,
 		SLOT(systemResumed(bool)) ) ;
-
-	QNetworkInformation::loadDefaultBackend() ;
 
 	auto m = m_dbusInterface.call( "GetCapabilities" ).arguments() ;
 
@@ -801,19 +798,23 @@ void qCheckGMail::notificationClosed( quint32 id,quint32 reason )
 
 void qCheckGMail::waitForNetwork( int delay )
 {
-	auto ni = QNetworkInformation::instance() ;
+	m_manager.head( QNetworkRequest( QUrl( "https://accounts.google.com" ) ),
+		[ this,delay ]( const utils::network::reply& reply ){
 
-	if( !ni || ni->reachability() == QNetworkInformation::Reachability::Online ){
+		if( reply.error() == QNetworkReply::NoError ||
+		    reply.error() == QNetworkReply::AuthenticationRequiredError ||
+		    reply.error() == QNetworkReply::ContentNotFoundError ){
 
-		this->checkMail() ;
-	}else{
-		int nextDelay = std::min( delay * 2,60000 ) ;
+			this->checkMail() ;
+		}else{
+			int nextDelay = std::min( delay * 2,60000 ) ;
 
-		QTimer::singleShot( delay,this,[this,nextDelay](){
+			QTimer::singleShot( nextDelay,this,[this,nextDelay](){
 
-			this->waitForNetwork( nextDelay ) ;
-		} ) ;
-	}
+				this->waitForNetwork( nextDelay ) ;
+			} ) ;
+		}
+	} ) ;
 }
 
 void qCheckGMail::systemResumed( bool aboutToSleep )
@@ -826,11 +827,10 @@ void qCheckGMail::systemResumed( bool aboutToSleep )
 		}
 
 		m_manager.QtNAM().clearConnectionCache() ;
-		m_waitingForNetwork = false ;
 
 		m_timer.stop() ;
 		m_timer.start( m_interval ) ;
-		this->checkMail() ;
+		this->waitForNetwork( 1000 ) ;
 	}
 }
 
@@ -946,14 +946,6 @@ void qCheckGMail::alwaysShowTrayIcon( bool e )
  */
 void qCheckGMail::checkMail()
 {
-	auto ni = QNetworkInformation::instance() ;
-
-	if( ni && ni->reachability() != QNetworkInformation::Reachability::Online ){
-
-		this->waitForNetwork( 1000 ) ;
-		return ;
-	}
-
 	if( m_numberOfAccounts > 0 ){
 
 		m_accountsStatus.clear() ;
@@ -1104,22 +1096,9 @@ void qCheckGMail::getAccessToken( int counter,
 				m_logWindow.update( logWindow::TYPE::ERROR,err.unTranslated,true ) ;
 				this->updateUi( counter,{},err.translated ) ;
 			}else{
-				auto error = reply.error() ;
-
-				if( error == QNetworkReply::HostNotFoundError ||
-				    error == QNetworkReply::TemporaryNetworkFailureError ||
-				    error == QNetworkReply::NetworkSessionFailedError ){
-
-					auto err = this->errorMessage( reply ) ;
-					m_logWindow.update( logWindow::TYPE::ERROR,err.unTranslated,true ) ;
-
-					m_manager.QtNAM().clearConnectionCache() ;
-					this->waitForNetwork( 1000 ) ;
-				}else{
-					auto err = this->errorMessage( reply ) ;
-					m_logWindow.update( logWindow::TYPE::ERROR,err.unTranslated,true ) ;
-					this->updateUi( counter,{},err.translated ) ;
-				}
+				auto err = this->errorMessage( reply ) ;
+				m_logWindow.update( logWindow::TYPE::ERROR,err.unTranslated,true ) ;
+				this->updateUi( counter,{},err.translated ) ;
 			}
 		}
 	} ) ;
@@ -1309,22 +1288,6 @@ void qCheckGMail::networkAccess( const QNetworkRequest& request,networkAccessCon
 							     err.code,
 							     std::move( err.errorMsg ) } ) ;
 			}else{
-				if( error == QNetworkReply::HostNotFoundError ||
-				    error == QNetworkReply::TemporaryNetworkFailureError ||
-				    error == QNetworkReply::NetworkSessionFailedError ){
-
-					auto err = this->errorMessage( reply ) ;
-
-					m_logWindow.update( logWindow::TYPE::ERROR,
-							    err.unTranslated,
-							    true ) ;
-
-					m_manager.QtNAM().clearConnectionCache() ;
-					this->waitForNetwork( 1000 ) ;
-
-					return ;
-				}
-
 				auto err = this->errorMessage( reply ) ;
 
 				m_logWindow.update( logWindow::TYPE::ERROR,

@@ -262,7 +262,6 @@ private:
 	bool m_errorOccured ;
 	bool m_visualNotify ;
 	bool m_notificationSupportshyperlinks ;
-	bool m_waitingForNetwork = false ;
 
 	QString m_newEmailIcon ;
 	QString m_errorIcon ;
