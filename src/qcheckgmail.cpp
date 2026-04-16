@@ -1075,7 +1075,9 @@ void qCheckGMail::getAccessToken( int counter,
 
 				this->updateUi( counter,{},tr( "Unexpected Data Received" ) ) ;
 			}else{
-				acc.setAccessToken( e ) ;
+				auto expiresIn = QJsonDocument::fromJson( data ).object().value( "expires_in" ).toInt() ;
+
+				acc.setAccessToken( e,expiresIn ) ;
 
 				auto url = UrlLabel.toUtf8() ;
 
@@ -1429,7 +1431,7 @@ void qCheckGMail::checkMail( int counter,const accounts& acc,const QString& UrlL
 {
 	const auto& accessToken = acc.accessToken() ;
 
-	if( accessToken.isEmpty() ){
+	if( acc.isTokenExpired() ){
 
 		const auto& refreshToken = acc.refreshToken() ;
 

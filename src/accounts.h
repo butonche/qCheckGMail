@@ -22,6 +22,7 @@
 
 #include <QString>
 #include <QVector>
+#include <QDateTime>
 
 class accountLabel
 {
@@ -61,14 +62,16 @@ public:
 	const QString& labelUrlAt( int ) const ;
 	const QString& nameUiAt( int ) const ;
 	const QString& accessToken() const ;
+	bool isTokenExpired() const ;
 
 	int numberOfLabels() const ;
 
 	void updateAccountInfo( const QString& accName,const QString& labels ) ;
-	void setAccessToken( const QString& ) const ;
+	void setAccessToken( const QString&,int expiresIn = 0 ) const ;
 private:
 	void updateLabels() ;
 	mutable QString m_accessToken ;
+	mutable QDateTime m_tokenExpiry ;
 	accounts::entry m_entry ;
 	QVector< accountLabel > m_labelUrls ;
 };

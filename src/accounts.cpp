@@ -64,9 +64,26 @@ void accounts::updateAccountInfo( const QString& accName,const QString& labels )
 	this->updateLabels() ;
 }
 
-void accounts::setAccessToken( const QString& e ) const
+void accounts::setAccessToken( const QString& e,int expiresIn ) const
 {
 	m_accessToken = e ;
+
+	if( expiresIn > 0 ){
+
+		m_tokenExpiry = QDateTime::currentDateTime().addSecs( expiresIn - 60 ) ;
+	}else{
+		m_tokenExpiry = QDateTime() ;
+	}
+}
+
+bool accounts::isTokenExpired() const
+{
+	if( m_accessToken.isEmpty() || !m_tokenExpiry.isValid() ){
+
+		return true ;
+	}
+
+	return QDateTime::currentDateTime() >= m_tokenExpiry ;
 }
 
 void accounts::updateLabels()
